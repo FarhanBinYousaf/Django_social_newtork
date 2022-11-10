@@ -1,0 +1,142 @@
+{% extends 'landing/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container">
+	<div class="row mt-3 justify-content-center ">
+		<div class="row ">
+			<div class="col-md-6 col-sm-12">
+				<a href="{% url 'post-list' %}" class="btn btn-light">Back to Feed</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="row justify-content-center mt-3">
+		<div class="col-md-5 col-sm-12 border-bottom">
+			<div>
+				<a href="{% url 'profile' post.author.profile.pk %}">
+					<img style="float: left;margin-right: 1rem;" class="rounded-circle" src="{{ post.author.profile.picture.url }}" height="30" width="30">
+				</a>  
+				<p><strong>{{ post.author }}</strong> {{ post.created_on }}
+					{% if request.user == post.author %}
+					<a href="{% url 'post-edit' post.pk %}" style="color: navy;font-size: 22px;"><i class="fa-solid fa-pen-to-square"></i></a>
+					<a href="{% url 'post-delete' post.pk %}" style="color: red;font-size: 22px;"><i class="fas fa-trash"></i></a>
+					{% endif %}
+				</p>
+			</div>
+
+			<p>{{ post.body }}</p>
+			<div class="d-flex flex-row">
+				<form method="POST" action="{% url 'like' post.pk %}">
+					{% csrf_token %}
+					<input type="hidden" name="next" value="{{ request.path }}">
+					<button style="background-color: transparent; border: none; box-shadow: none;" type="submit">
+						<i class="fa-solid fa-thumbs-up" style="color:navy;"> <span>{{ post.likes.all.count }}</span></i>
+					</button>
+				</form>
+
+				<form method="POST" action="{% url 'dislike' post.pk %}">
+					{% csrf_token %}
+					<input type="hidden" name="next" value="{{ request.path }}">
+					<button style="background-color: transparent; border: none; box-shadow: none;" type="submit">
+						<i class="far fa-thumbs-down"> <span>{{ post.dislikes.all.count }}</span></i>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div class="row justify-content-center mt-3">
+		<div class="col-md-5 col-sm-12 ">
+			<h5>comment</h5>
+			<form method="POST">
+				{% csrf_token %}
+				{{ form | crispy }}
+				<div class="d-grid gap-2">
+					<button class="btn btn-success mt-3 mb-3">Comment</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	{% for comment in comments %}
+	{% if comment.is_parent %}
+	<div class="row justify-content-center mt-3  ">
+		<div class="col-md-5 col-sm-12">
+			<div>
+				<a href="{% url 'profile' comment.author.profile.pk %}">
+					<img style="float: left;margin-right: 1rem;" class="rounded-circle" src="{{ comment.author.profile.picture.url }}" height="30" width="30">
+				</a>  
+				<p>
+					<strong>{{ comment.author }}</strong> {{ comment.created_on }}
+					{% if request.user == comment.author %}
+
+					<a href="{% url 'comment-delete' post.pk comment.pk %}" style="color: red;font-size: 22px;"><i class="fas fa-trash"></i></a>
+					{% endif %}
+				</p> 
+			</div>
+
+			<p>{{ comment.comment }}</p>
+			<!-- comment Like and comment Dislike -->
+			<div class="d-flex flex-row">
+				<form method="POST" action="{% url 'comment-like' post.pk comment.pk %}">
+					{% csrf_token %}
+					<input type="hidden" name="next" value="{{ request.path }}">
+					<button style="background-color: transparent; border: none; box-shadow: none;" type="submit">
+						<i class="fa-solid fa-thumbs-up" style="color:navy;"> <span>{{ comment.likes.all.count }}</span></i>
+					</button>
+				</form>
+
+				<form method="POST" action="{% url 'comment-dislike' post.pk comment.pk %}">
+					{% csrf_token %}
+					<input type="hidden" name="next" value="{{ request.path }}">
+					<button style="background-color: transparent; border: none; box-shadow: none;" type="submit">
+						<i class="far fa-thumbs-down"> <span>{{ comment.dislikes.all.count }}</span></i>
+					</button>
+				</form>
+				<!-- comment reply toggle button  -->
+				<button class="remove-default-btn" style="border: none;"><i class="fa-solid fa-comment" onclick="commentToggleReply('{{ comment.pk }}')"></i></button>
+			</div>
+			
+			<hr>
+		</div>
+
+	</div>
+	<!-- Comment Reply Form -->
+	<div class="row justify-content-center mt-3 mb-5 d-none" id="{{ comment.pk }}">
+		<div class="col-md-5 col-sm-12">
+			<form method="POST" action="{% url 'comment-reply' post.pk comment.pk %}">
+				{% csrf_token %}
+				{{ form | crispy }}
+				<div class="d-grid gap-2">
+					<button class="btn btn-success mt-3">Reply!</button>
+				</div>
+			</form>
+		</div>
+	</div>
+<!-- This below code is for comment reply => child comment -->
+	{% for child_comment in comment.children %}
+	<div class="row justify-content-center mt-3 mb-5" style="margin-left: 4rem;">
+		<div class="col-md-5 col-sm-12 " style="margin-left:4rem;">
+
+			<div>
+				<a href="{% url 'profile' child_comment.author.profile.pk %}">
+					<img style="float: left;" class="rounded-circle" src="{{ child_comment.author.profile.picture.url }}" height="30" width="30">
+				</a>  
+				<p>
+					<a href="{% url 'profile' child_comment.author.profile.pk %}" style="text-decoration:none;" >&nbsp;<strong>{{ child_comment.author }}</strong></a> {{ child_comment.created_on }}
+					{% if request.user == child_comment.author %}
+
+					<a href="{% url 'comment-delete' post.pk child_comment.pk %}" style="color: red;font-size: 22px;"><i class="fas fa-trash"></i></a>
+					{% endif %}
+				</p> 
+			</div>
+			<p class="ml-5">
+				{{ child_comment.comment }}
+			</p>
+		</div>
+	</div>
+	{% endfor %}
+	{% endif %}
+	{% endfor %}
+</div>
+
+{% endblock content %}

@@ -1,0 +1,93 @@
+{% extends 'landing/base.html' %}
+{% block content %}
+<div class="container">
+    <div class="row mt-5">
+        <div class="col-md-3 col-sm-6">
+            <a href="{% url 'post-list' %}" class="btn btn-light">Back to Feed</a>
+        </div>
+    </div>
+    <div class="row justify-content-center mt-5">
+        <div class="card shadow-lg col-md-8 col-sm-12 border-bottom px-5 pt-3">
+            <a href="{{ profile.picture.url }}"><img src="{{ profile.picture.url }}" class="rounded-circle" width="100" height="100" /></a>
+            {% if profile.name %}
+            <h3 class="py-4">{{ profile.name }}
+                <span>
+                    {% if request.user == user %}
+                    <a href="{% url 'profile-edit' profile.pk %}" style="color: navy;font-size: 22px;"><i class="fa-solid fa-pen-to-square"></i></a>
+                    {% endif %}
+                </span>
+            {% else %}
+            <h3>{{ user.username }} 
+            <span>
+                    {% if request.user == user %}
+                    <a href="{% url 'profile-edit' profile.pk %}" style="color: navy;font-size: 22px;"><i class="fa-solid fa-pen-to-square"></i></a>
+                    {% endif %}
+                </span>
+                {% endif %}
+            </h3>
+            
+            {% if profile.location %}
+            <p>{{ profile.location }}</p>
+            {% endif %}
+            {% if profile.birth_date %}
+            <p>{{ profile.birth_date }}</p>
+            {% endif %}
+            {% if profile.bio %}
+            <p>{{ profile.bio }}</p>
+            {% endif %}
+            <div class="mb-3 d-flex flex-row">
+                <a href="{% url 'followers-list' profile.pk %}" class="btn btn-primary">Followers: {{ number_of_followers }} </a>&nbsp;
+                {% if user == request.user  %}
+                {% else %}
+                    {% if is_following %}
+                    <form method="POST" action="{% url 'remove-follower' profile.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger">Unfollow</button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{% url 'add-follower' profile.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-success">Follow</button>
+                    </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% for post in posts %}
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-5 col-sm-12 border-bottom position-relative">
+            <div>
+                 <a href="{% url 'profile' post.author.profile.pk %}">
+                <img style="float: left;margin-right: 1rem;" class="rounded-circle" src="{{ post.author.profile.picture.url }}" height="30" width="30">
+            </a>  
+                <p><a style="text-decoration: none" class="text-primary" href="{% url 'profile' post.author.profile.pk %}">@{{ post.author }}</a> {{ post.created_on }}</p>
+            </div>
+            
+            <div class="position-relative">
+                <p>{{ post.body }}</p>
+                <a href="{% url 'post' post.pk %}" class="stretched-link"></a>
+            </div>
+           <div class="d-flex flex-row">
+                <form method="POST" action="{% url 'like' post.pk %}">
+                     {% csrf_token %}
+                     <input type="hidden" name="next" value="{{ request.path }}">
+                     <button style="background-color: transparent; border: none; box-shadow: none;" type="submit">
+                         <i class="fa-solid fa-thumbs-up" style="color:navy;"><span>{{ post.likes.all.count }}</span></i>
+                     </button>
+                </form>
+
+                <form method="POST" action="{% url 'dislike' post.pk %}">
+                     {% csrf_token %}
+                     <input type="hidden" name="next" value="{{ request.path }}">
+                     <button style="background-color: transparent; border: none; box-shadow: none;" type="submit">
+                         <i class="far fa-thumbs-down"> <span>{{ post.dislikes.all.count }}</span></i>
+                     </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}
